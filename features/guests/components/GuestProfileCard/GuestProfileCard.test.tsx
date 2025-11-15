@@ -20,7 +20,7 @@ describe("GuestProfileCard", () => {
 
     expect(screen.getByText("Test Guest")).toBeInTheDocument();
     expect(screen.getByText("test@example.com")).toBeInTheDocument();
-    expect(screen.getByText(/LTV/)).toBeInTheDocument();
+    expect(screen.getByText("LTV")).toBeInTheDocument();
   });
 
   it("renders all segments as badges", () => {
