@@ -24,7 +24,6 @@
       ]
     },
     "types": [
-      "@storybook/test",
       "jest"
     ],
     "plugins": [
