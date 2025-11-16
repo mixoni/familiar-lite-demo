@@ -1,0 +1,24 @@
+import type { Preview, Decorator } from "@storybook/react";
+import "../app/globals.css";
+import { AppShell } from "@/shared/components/AppShell/AppShell";
+
+const withAppShell: Decorator = (Story) => (
+  <AppShell>
+    <Story />
+  </AppShell>
+);
+
+const preview: Preview = {
+  decorators: [withAppShell],
+  parameters: {
+    actions: { argTypesRegex: "^on[A-Z].*" },
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/
+      }
+    }
+  }
+};
+
+export default preview;
