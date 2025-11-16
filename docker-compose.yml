@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: familiar_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: familiar
+      POSTGRES_PASSWORD: familiar
+      POSTGRES_DB: familiar_db
+    ports:
+      - "5532:5432"
+    volumes:
+      - familiar_pg_data:/var/lib/postgdockresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: familiar_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.test
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  familiar_pg_data:
