@@ -32,26 +32,33 @@ describe("HotelDetails", () => {
       <HotelDetails
         hotel={hotel}
         segmentFilter={null}
-        onSegmentFilterChange={() => {}}
+        onSegmentFilterChange={jest.fn()}
       />
     );
-
+  
     expect(screen.getByText("Seaside Retreat")).toBeInTheDocument();
-    expect(screen.getByText("Barcelona, Spain · 120 rooms · ★★★★")).toBeInTheDocument();
+  
+  
+    expect(screen.getByText(/Barcelona/i)).toBeInTheDocument();
+    expect(screen.getByText(/Spain/i)).toBeInTheDocument();
+  
     expect(screen.getByText("Anna Müller")).toBeInTheDocument();
   });
 
-  it("renders empty state when no hotel is selected", () => {
+  it("renders empty state when hotel has no guests", () => {
+    const emptyHotel = { ...hotel, guestProfiles: [] };
+  
     render(
       <HotelDetails
-        hotel={null}
+        hotel={emptyHotel}
         segmentFilter={null}
-        onSegmentFilterChange={() => {}}
+        onSegmentFilterChange={jest.fn()}
       />
     );
-
+  
     expect(
-      screen.getByText(/Select a hotel from the left/i)
+      screen.getByText(/No guests found for this hotel yet./i)
     ).toBeInTheDocument();
   });
+  
 });

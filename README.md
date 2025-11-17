@@ -1,227 +1,187 @@
-# Familiar Lite – Hotel CRM Demo (v2)
+# Familiar Lite – Full-Stack Demo  
+### Next.js App Router • Storybook • NestJS • PostgreSQL • Prisma • CI/CD
 
-This is an extended version of the Familiar-inspired hotel CRM demo.
+A modern full-stack reference application demonstrating:
 
-Goals:
+- **Next.js App Router** (SSR + Client Components)
+- **Feature-based architecture**
+- **Storybook 8** with full Next.js integration  
+- **TailwindCSS**
+- **Jest + React Testing Library**
+- **NestJS backend**, modular architecture
+- **Prisma ORM + PostgreSQL**
+- **Docker Compose** infrastructure
+- **GitHub Actions CI**
 
-- Show how I'd structure a **Next.js App Router** frontend around **business features** (hotels, guests)
-- Use **Storybook + @storybook/nextjs** for component-driven development
-- Use **Jest + React Testing Library** and **Storybook interaction tests** for confidence
-- Work with **richer mock data**, closer to a real multi-property hotel CRM
-
----
-
-## 1. Business slice
-
-The UI focuses on a small but realistic slice of functionality:
-
-- **Portfolio overview** – total hotels, rooms, avg occupancy, and monthly revenue
-- **Hotel list** – searchable by name, city or country
-- **Hotel details** – occupancy, revenue, rooms, star rating, number of unified guest profiles
-- **Guest profiles** – per hotel guests with:
-  - lifetime value (LTV)
-  - last stay
-  - origin channel (Direct, OTA, Corporate, Agency)
-  - segments (High LTV, Loyalty, Upsell candidate, Corporate…)
-
-All data is in-memory mock data, but the code is structured as if a real NestJS/Fastify API exists behind it.
+The project simulates a **Hotel CRM mini-platform** featuring hotels, guests, LTV metrics, segments, profile cards, and dashboards.
 
 ---
 
-## 2. Folder structure (feature/domain based)
+# 🚀 Project Overview
 
-```text
-app/
-  layout.tsx        – Root layout; uses shared AppShell
-  page.tsx          – Composes HotelDashboard with mock data
+## **Frontend (Next.js)**  
+- App Router  
+- Feature directories (`features/hotels`, `features/guests`)  
+- Server Components + Client Components  
+- Fully typed HTTP layer  
+- Tailwind design  
+- Storybook with Next-decorators  
+- Jest UI tests  
 
-features/
-  hotels/
-    components/
-      HotelDashboard/
-        HotelDashboard.tsx        – container: state & orchestration + summary tiles
-      HotelList/
-        HotelList.tsx             – presentational list of hotels
-        HotelList.stories.tsx     – Storybook stories + interaction test
-        HotelList.test.tsx        – Jest + RTL tests
-      HotelDetails/
-        HotelDetails.tsx          – presentational detail + segment filter
-        HotelDetails.stories.tsx  – Storybook stories + interaction test
-        HotelDetails.test.tsx     – Jest + RTL tests
-    types.ts                      – Hotel type
-    mockData.ts                   – richer hotel + guest data
+## **Backend (NestJS)**  
+- Modular architecture  
+- Prisma ORM  
+- Auto DB migrations  
+- Seeder  
+- DTO validation  
+- REST endpoints for hotels & guests  
 
-  guests/
-    components/
-      GuestProfileCard/
-        GuestProfileCard.tsx      – presentational guest card
-        GuestProfileCard.stories.tsx
-        GuestProfileCard.test.tsx
-    types.ts                      – GuestProfile type
+## **Database**  
+- PostgreSQL via Docker  
+- Prisma schema  
+- Auto-seeding of demo data  
 
-shared/
-  components/
-    AppShell/
-      AppShell.tsx                – shared app shell/layout (used by Next + Storybook)
-  lib/
-    formatCurrency.ts             – shared formatting helpers
-    formatDate.ts
+## **CI/CD – GitHub Actions**  
+Runs automatically on push:
 
-.storybook/
-  main.ts                         – Storybook config (uses @storybook/nextjs)
-  preview.tsx                     – global decorators; wraps stories in AppShell
+1. Install pnpm  
+2. Install dependencies  
+3. Run Jest tests  
+4. Build Next.js  
+5. Build Storybook  
+6. Build Nest API  
 
-.github/
-  workflows/
-    ci.yml                        – simple GitHub Actions CI (test + build + build-storybook)
+---
+
+# 🛠 Local Setup Guide
+
+## 1️⃣ Clone Repository
+
+```bash
+git clone https://github.com/<your>/familiar-lite-demo.git
+cd familiar-lite-demo
 ```
 
-This mirrors how I like to scale larger frontends:
-
-- I navigate by **domain** (`features/hotels`, `features/guests`) instead of `components/`, `hooks/`, `utils/`
-- Stories and tests live next to the component they describe
-- Shared building blocks live under `shared/`
-
 ---
 
-## 3. Richer mock data
-
-`features/hotels/mockData.ts` contains multiple properties:
-
-- urban/city hotels, resort, alpine lodge, harbour, desert resort
-- varying:
-  - occupancy rates
-  - monthly revenue
-  - star ratings
-  - room counts
-- guest profiles with:
-  - multiple countries and cities
-  - different channels (OTA, Direct, Corporate, Agency)
-  - a mix of segments (High LTV, Loyalty, Upsell candidate, Corporate…)
-
-This makes the UI feel more like a real CRM dashboard and allows more interesting story states.
-
----
-
-## 4. Components & state
-
-### HotelDashboard (container)
-
-- Owns UI state:
-  - `selectedHotelId`
-  - `search`
-  - `segmentFilter`
-- Derives:
-  - `filteredHotels` by search term
-  - `selectedHotel` based on selection
-  - portfolio summary: total hotels, total rooms, avg occupancy, total revenue
-- Composes:
-  - `HotelList` (sidebar)
-  - `HotelDetails` (main panel)
-
-### HotelList (presentational)
-
-- Receives:
-  - `hotels`, `selectedHotelId`, `search`, callbacks
-- Renders:
-  - search box
-  - list of hotel rows with basic KPIs
-- Emits:
-  - `onSearchChange`
-  - `onSelectHotel`
-
-### HotelDetails (presentational)
-
-- Receives:
-  - `hotel` (or null)
-  - `segmentFilter`, `onSegmentFilterChange`
-- Shows:
-  - name, location, rooms, star rating
-  - occupancy, revenue, guest count
-  - segment filter chips
-  - grid of `GuestProfileCard` components for visible guests
-
-### GuestProfileCard (presentational)
-
-- Receives:
-  - `GuestProfile`
-- Renders:
-  - name, city+country, email
-  - LTV (formatted currency)
-  - last stay (formatted date) + channel
-  - segment badges
-
----
-
-## 5. Storybook – Next.js integration + interaction tests
-
-Storybook is configured using **`@storybook/nextjs`**, so stories render within a Next-like environment.
-
-- `.storybook/preview.tsx` imports `globals.css` and wraps stories in `AppShell`, so they look like the real app.
-- Stories:
-  - `GuestProfileCard.stories.tsx`
-    - `Default` with a small interaction test (checks name & email)
-    - `OTAGuest` to show OTA + Upsell segments
-  - `HotelList.stories.tsx`
-    - `Default`
-    - `FilterByCity` – uses `userEvent` to type in the search box
-    - `NoResults`
-  - `HotelDetails.stories.tsx`
-    - `Default`
-    - `FilterHighLTV` – clicks the segment chip
-    - `NoHotelSelected` – shows empty state
-
-These interaction tests run inside Storybook via `@storybook/test`, and they complement the Jest unit tests.
-
----
-
-## 6. Testing – Jest + React Testing Library
-
-- `GuestProfileCard.test.tsx`
-  - assert name, email, LTV label, segments
-- `HotelList.test.tsx`
-  - assert hotels render
-  - assert `onSearchChange` is called with the typed value
-- `HotelDetails.test.tsx`
-  - assert summary labels and guest name render
-  - assert empty state when `hotel` is null
-
-Run everything locally:
+# 2️⃣ Install Dependencies
 
 ```bash
 pnpm install
+```
 
-pnpm dev           # Next app at http://localhost:3000
-pnpm storybook     # Storybook at http://localhost:6006
-pnpm test          # Jest tests
-pnpm build         # production build
-pnpm build-storybook
+Backend:
+
+```bash
+cd api
+pnpm install
+cd ..
 ```
 
 ---
 
-## 7. CI – GitHub Actions
+# 3️⃣ Start PostgreSQL Using Docker
 
-`.github/workflows/ci.yml` shows how I'd wire a lightweight CI:
+```bash
+docker compose up -d
+```
 
-- install dependencies with pnpm
-- run Jest tests
-- build the Next app
-- build Storybook static bundle
-
-It's intentionally minimal, but easy to extend with linting, Chromatic, etc.
+- DB: `localhost:5532`  
+- Adminer UI: `http://localhost:8080`  
 
 ---
 
-## 8. How this maps to Friendly / Familiar
+# 4️⃣ Configure API Environment Variables
 
-Even though this is a mock app, it demonstrates:
+Create **api/.env**:
 
-- **TypeScript-first modeling** of hotels and unified guest profiles
-- **Feature/domain architecture** suitable for multi-tenant SaaS
-- **Next.js App Router** usage with a shared `AppShell` layout
-- **Storybook + @storybook/nextjs** integration for component-driven dev
-- **Jest + RTL + Storybook interaction tests** as a layered testing strategy
-- **Richer data** to showcase segments, channels, LTV, revenue — the kind of data a real Marketing CRM would care about.
+```env
+DATABASE_URL="postgresql://familiar:familiar@localhost:5532/familiar_db?schema=public"
+```
 
-This is exactly the kind of structure I'd propose for a real-world Familiar / Friendly frontend codebase, just scaled down for a demo.
+---
+
+# 5️⃣ Run Prisma Migrations + Seed
+
+```bash
+cd api
+pnpm prisma migrate dev --name init
+pnpm prisma db seed
+cd ..
+```
+
+---
+
+# 6️⃣ Start Backend API
+
+```bash
+cd api
+pnpm start:dev
+```
+
+➡ Runs at: **http://localhost:3001**
+
+---
+
+# 7️⃣ Start Frontend (Next.js)
+
+In project root:
+
+```bash
+pnpm dev
+```
+
+➡ Runs at: **http://localhost:3000**
+
+---
+
+# 8️⃣ Start Storybook
+
+```bash
+pnpm storybook
+```
+
+➡ Runs at: **http://localhost:6006**
+
+---
+
+# 🧪 Running Tests
+
+Run Jest tests:
+
+```bash
+pnpm test
+```
+
+---
+
+# 📁 Project Structure
+
+```
+familiar-lite-demo/
+ ├── app/                  # Next.js app router
+ ├── features/             # Feature-based UI modules
+ ├── storybook/            # Storybook config
+ ├── api/                  # NestJS backend
+ │   ├── prisma/           # Prisma schema + migrations
+ │   ├── src/              # Modules, services, controllers
+ ├── docker-compose.yml    # PostgreSQL infra
+ ├── .github/workflows/    # CI pipelines
+```
+
+---
+
+# 🌟 What This Demo Demonstrates
+
+✔ Modern **Next.js + Storybook** component workflows  
+✔ Type-safe FE/BE integration  
+✔ Clean NestJS modular backend  
+✔ CI pipeline ready for production  
+✔ Expandable SaaS-friendly architecture  
+✔ Realistic CRM-like domain logic  
+
+---
+
+# 📄 License
+
+MIT  
