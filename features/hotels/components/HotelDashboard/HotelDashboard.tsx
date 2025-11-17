@@ -1,94 +1,150 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import type { Hotel } from "@/features/hotels/types";
-import { HotelList } from "@/features/hotels/components/HotelList/HotelList";
-import { HotelDetails } from "@/features/hotels/components/HotelDetails/HotelDetails";
+import { useEffect, useState } from 'react';
+import { HotelDetails } from '../HotelDetails/HotelDetails';
+import { HotelList } from '../HotelList/HotelList';
+import { fetchHotelDetails, fetchHotels } from '@/app/lib/api';
 
-type Props = {
-  initialHotels: Hotel[];
-};
+export type HotelSummary = any;
+export type HotelWithGuests = any;
 
-export const HotelDashboard: React.FC<Props> = ({ initialHotels }) => {
-  const [selectedHotelId, setSelectedHotelId] = useState<string | null>(
-    initialHotels[0]?.id ?? null
+type SegmentFilter = string | null;
+
+export function HotelDashboard() {
+  const [hotels, setHotels] = useState<HotelSummary[]>([]);
+  const [selectedHotel, setSelectedHotel] = useState<HotelWithGuests | null>(
+    null,
   );
-  const [search, setSearch] = useState("");
-  const [segmentFilter, setSegmentFilter] = useState<string | null>(null);
+  const [selectedHotelId, setSelectedHotelId] = useState<string | null>(null);
 
-  const filteredHotels = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    if (!term) return initialHotels;
-    return initialHotels.filter(
-      (h) =>
-        h.name.toLowerCase().includes(term) ||
-        h.city.toLowerCase().includes(term) ||
-        h.country.toLowerCase().includes(term)
+  const [search, setSearch] = useState('');
+  const [segmentFilter, setSegmentFilter] = useState<SegmentFilter>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [loadingHotel, setLoadingHotel] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initial load
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const hotelsFromApi = await fetchHotels();
+        setHotels(hotelsFromApi);
+
+        if (hotelsFromApi.length > 0) {
+          const first = hotelsFromApi[0];
+          setSelectedHotelId(first.id);
+          const details = await fetchHotelDetails(first.id);
+          setSelectedHotel(details);
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load hotels from API.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // fire-and-forget
+    void load();
+  }, []);
+
+  // When user clicks on a hotel in the list
+  const handleSelectHotel = async (id: string) => {
+    if (id === selectedHotelId) return;
+
+    setSelectedHotelId(id);
+    setLoadingHotel(true);
+    setError(null);
+
+    try {
+      const details = await fetchHotelDetails(id);
+      setSelectedHotel(details);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load hotel details.');
+    } finally {
+      setLoadingHotel(false);
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+  };
+
+  const handleSegmentFilterChange = (value: SegmentFilter) => {
+    setSegmentFilter(value);
+  };
+
+  const filteredHotels = hotels.filter((hotel: any) => {
+    if (!search) return true;
+
+    const term = search.toLowerCase();
+    return (
+      hotel.name?.toLowerCase().includes(term) ||
+      hotel.city?.toLowerCase().includes(term) ||
+      hotel.country?.toLowerCase().includes(term)
     );
-  }, [initialHotels, search]);
-
-  const selectedHotel = useMemo(
-    () => filteredHotels.find((h) => h.id === selectedHotelId) ?? filteredHotels[0] ?? null,
-    [filteredHotels, selectedHotelId]
-  );
-
-  const summary = useMemo(() => {
-    const totalHotels = filteredHotels.length;
-    const totalRooms = filteredHotels.reduce((acc, h) => acc + h.rooms, 0);
-    const avgOcc =
-      filteredHotels.reduce((acc, h) => acc + h.occupancyRate, 0) /
-      (filteredHotels.length || 1);
-    const totalRevenue = filteredHotels.reduce(
-      (acc, h) => acc + h.revenueThisMonth,
-      0
-    );
-    return { totalHotels, totalRooms, avgOcc, totalRevenue };
-  }, [filteredHotels]);
+  });
 
   return (
-    <div className="space-y-4">
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SummaryTile label="Hotels" value={summary.totalHotels.toString()} />
-        <SummaryTile label="Rooms" value={summary.totalRooms.toLocaleString("en-US")} />
-        <SummaryTile
-          label="Avg occupancy"
-          value={`${(summary.avgOcc * 100).toFixed(0)}%`}
-        />
-        <SummaryTile
-          label="Monthly revenue"
-          value={`€${summary.totalRevenue.toLocaleString("en-US")}`}
-        />
-      </section>
+    <main className="min-h-screen bg-slate-950 text-slate-50">
+      <div className="mx-auto max-w-6xl px-6 py-6">
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold">
+            Familiar Lite – Hotel CRM Demo
+          </h1>
+          <p className="text-sm text-slate-400">
+            Unified guest profiles &amp; marketing insights (backed by NestJS +
+            Postgres API).
+          </p>
+        </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-[340px,1fr] gap-4 h-[520px]">
-        <HotelList
-          hotels={filteredHotels}
-          selectedHotelId={selectedHotel?.id ?? null}
-          search={search}
-          onSearchChange={setSearch}
-          onSelectHotel={setSelectedHotelId}
-        />
+        {error && (
+          <div className="mb-4 rounded-md border border-red-500/40 bg-red-900/20 px-3 py-2 text-sm text-red-200">
+            {error}
+          </div>
+        )}
 
-        <HotelDetails
-          hotel={selectedHotel}
-          segmentFilter={segmentFilter}
-          onSegmentFilterChange={setSegmentFilter}
-        />
+        {loading ? (
+          <div className="flex h-[400px] items-center justify-center text-slate-400">
+            Loading hotels…
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-[280px,minmax(0,1fr)]">
+            {/* LEFT: hotel list */}
+            <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
+              <HotelList
+                hotels={filteredHotels}
+                selectedHotelId={selectedHotelId ?? ''}
+                search={search}
+                onSearchChange={handleSearchChange}
+                onSelectHotel={handleSelectHotel}
+              />
+            </section>
+
+            {/* RIGHT: details */}
+            <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
+              {loadingHotel || !selectedHotel ? (
+                <div className="flex h-full items-center justify-center text-slate-400">
+                  {loadingHotel
+                    ? 'Loading hotel details…'
+                    : 'Select a hotel to see details.'}
+                </div>
+              ) : (
+                <HotelDetails
+                  hotel={selectedHotel}
+                  segmentFilter={segmentFilter}
+                  onSegmentFilterChange={handleSegmentFilterChange}
+                />
+              )}
+            </section>
+          </div>
+        )}
       </div>
-    </div>
+    </main>
   );
-};
-
-type SummaryProps = {
-  label: string;
-  value: string;
-};
-
-const SummaryTile: React.FC<SummaryProps> = ({ label, value }) => (
-  <div className="rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2">
-    <div className="text-[11px] uppercase tracking-wide text-slate-400">
-      {label}
-    </div>
-    <div className="text-sm font-semibold mt-1">{value}</div>
-  </div>
-);
+}

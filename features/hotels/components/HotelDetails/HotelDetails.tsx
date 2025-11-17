@@ -1,120 +1,129 @@
-import type { Hotel } from "@/features/hotels/types";
+'use client';
+
 import { GuestProfileCard } from "@/features/guests/components/GuestProfileCard/GuestProfileCard";
-import { useMemo } from "react";
 
-type Props = {
-  hotel: Hotel | null;
-  segmentFilter: string | null;
-  onSegmentFilterChange: (value: string | null) => void;
-};
 
-const ALL_SEGMENTS = [
-  "High LTV",
-  "Direct Booker",
-  "Loyalty",
-  "OTA",
-  "Corporate",
-  "Upsell candidate"
-];
+type SegmentFilter = string | null;
 
-export const HotelDetails: React.FC<Props> = ({
+interface HotelDetailsProps {
+  hotel: any;
+  segmentFilter: SegmentFilter;
+  onSegmentFilterChange: (segment: SegmentFilter) => void;
+}
+
+export function HotelDetails({
   hotel,
   segmentFilter,
-  onSegmentFilterChange
-}) => {
-  const visibleGuests = useMemo(() => {
-    if (!hotel) return [];
-    if (!segmentFilter) return hotel.guestProfiles;
-    return hotel.guestProfiles.filter((g) => g.segments.includes(segmentFilter));
-  }, [hotel, segmentFilter]);
+  onSegmentFilterChange,
+}: HotelDetailsProps) {
 
-  if (!hotel) {
-    return (
-      <section className="border border-slate-800 rounded-xl p-4 bg-slate-900/60 flex flex-col">
-        <div className="text-sm text-slate-400">
-          Select a hotel from the left to view its unified guest profiles.
-        </div>
-      </section>
-    );
-  }
+  const allGuests: any[] = Array.isArray(hotel?.guestProfiles)
+    ? hotel.guestProfiles
+    : Array.isArray(hotel?.guests)
+    ? hotel.guests
+    : [];
+
+  const filteredGuests =
+    segmentFilter == null
+      ? allGuests
+      : allGuests.filter((g) =>
+          Array.isArray(g.segments)
+            ? g.segments.includes(segmentFilter)
+            : false,
+        );
+
+  const occupancy = hotel?.occupancy ?? hotel?.metrics?.occupancy ?? null;
+  const revenue = hotel?.revenue ?? hotel?.metrics?.revenueMonthly ?? null;
+
+  const segments: string[] = hotel?.segments ?? [
+    'High LTV',
+    'Direct Booker',
+    'OTA',
+    'Corporate',
+  ];
 
   return (
-    <section className="border border-slate-800 rounded-xl p-4 bg-slate-900/60 flex flex-col">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-        <div>
-          <h2 className="text-lg font-semibold">{hotel.name}</h2>
-          <p className="text-xs text-slate-400">
-            {hotel.city}, {hotel.country} · {hotel.rooms} rooms ·{" "}
-            {"★".repeat(hotel.starRating)}
-          </p>
-        </div>
-        <div className="flex gap-4 text-xs">
-          <div>
-            <div className="text-slate-400 uppercase tracking-wide">
-              Occupancy
-            </div>
-            <div className="text-sm">
-              {(hotel.occupancyRate * 100).toFixed(0)}%
-            </div>
-          </div>
-          <div>
-            <div className="text-slate-400 uppercase tracking-wide">
-              Revenue (month)
-            </div>
-            <div className="text-sm">
-              €{hotel.revenueThisMonth.toLocaleString("en-US")}
-            </div>
-          </div>
-          <div>
-            <div className="text-slate-400 uppercase tracking-wide">
-              Guests
-            </div>
-            <div className="text-sm">
-              {hotel.guestProfiles.length}
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="flex h-full flex-col gap-4">
+      <header className="border-b border-slate-800 pb-3">
+        <h2 className="text-xl font-semibold">{hotel?.name}</h2>
+        <p className="text-sm text-slate-400">
+          {hotel?.city}, {hotel?.country}
+        </p>
 
-      <div className="mb-3 flex flex-wrap gap-2 items-center">
-        <span className="text-xs text-slate-400">Filter by segment:</span>
-        {ALL_SEGMENTS.map((seg) => {
-          const active = seg === segmentFilter;
-          return (
-            <button
-              key={seg}
-              onClick={() => onSegmentFilterChange(active ? null : seg)}
-              className={`px-2 py-1 rounded-full text-xs border ${
-                active
-                  ? "border-brand-500 bg-brand-500/10"
-                  : "border-slate-700 hover:border-slate-500"
-              }`}
-              data-testid={`segment-chip-${seg}`}
-            >
-              {seg}
-            </button>
-          );
-        })}
-        {segmentFilter && (
+        <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-300">
+          <div>
+            <div className="text-xs text-slate-400">Occupancy</div>
+            <div className="text-sm">
+              {occupancy != null ? `${occupancy}%` : 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-slate-400">Revenue (month)</div>
+            <div className="text-sm">
+              {revenue != null ? `€${revenue.toLocaleString('en-US')}` : 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-slate-400">Guests in CRM</div>
+            <div className="text-sm">{allGuests.length || 'N/A'}</div>
+          </div>
+        </div>
+      </header>
+
+      <section>
+        <h3 className="mb-2 text-sm font-semibold text-slate-200">
+          Filter by segment
+        </h3>
+        <div className="flex flex-wrap gap-2 text-xs">
           <button
+            type="button"
             onClick={() => onSegmentFilterChange(null)}
-            className="text-xs text-sky-400 underline ml-1"
+            className={`rounded-full border px-3 py-1 transition ${
+              segmentFilter === null
+                ? 'border-sky-500 bg-sky-500/10 text-sky-200'
+                : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500'
+            }`}
           >
-            Clear
+            All
           </button>
-        )}
-      </div>
+          {segments.map((segment) => (
+            <button
+              key={segment}
+              type="button"
+              onClick={() =>
+                onSegmentFilterChange(
+                  segmentFilter === segment ? null : segment,
+                )
+              }
+              className={`rounded-full border px-3 py-1 transition ${
+                segmentFilter === segment
+                  ? 'border-sky-500 bg-sky-500/10 text-sky-200'
+                  : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500'
+              }`}
+            >
+              {segment}
+            </button>
+          ))}
+        </div>
+      </section>
 
-      <div className="flex-1 overflow-auto grid gap-2 md:grid-cols-2">
-        {visibleGuests.map((guest) => (
-          <GuestProfileCard key={guest.id} guest={guest} />
-        ))}
-        {visibleGuests.length === 0 && (
-          <div className="text-xs text-slate-500 mt-4">
-            No guests in this segment for now.
+      <section className="flex-1 overflow-auto rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+        {allGuests.length === 0 ? (
+          <p className="text-sm text-slate-400">
+            No guests found for this hotel yet.
+          </p>
+        ) : filteredGuests.length === 0 ? (
+          <p className="text-sm text-slate-400">
+            No guests match the selected segment filter.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {filteredGuests.map((guest) => (
+              <GuestProfileCard key={guest.id} guest={guest} />
+            ))}
           </div>
         )}
-      </div>
-    </section>
+      </section>
+    </div>
   );
-};
+}
